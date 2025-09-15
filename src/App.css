@@ -1,0 +1,564 @@
+import React, { useMemo, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+/**
+ * AlfredPay® – Compliance Portal (Login + Dashboard Mock)
+ * v1.1 — Adds SSO (simulado) + vista "Manuales & Políticas" con lista JSON
+ * ------------------------------------------------------
+ * • Single-file React app con login (mock/SSO demo) y dashboard.
+ * • Nueva sección: catálogo de Manuales/Políticas versionado desde un JSON.
+ * • Barra lateral con tabs controladas por estado.
+ */
+
+const BRAND = {
+  name: "AlfredPay®",
+  primary: "#0F2A6B", // Deep blue
+  accent: "#FF6A00", // Sorbus Orange
+};
+
+const DEMO_USER = {
+  email: "compliance@alfredpay.io",
+  name: "Marino A. Marrero B.",
+};
+
+const ROLES = ["Admin", "Compliance Officer", "Auditor"] as const;
+
+type Role = typeof ROLES[number];
+
+type TabKey =
+  | "Overview"
+  | "KYC/KYB"
+  | "Manuales & Políticas"
+  | "Evidencias (Vault)"
+  | "Integraciones"
+  | "Usuarios & Roles"
+  | "Audit Log"
+  | "Settings";
+
+const TABS: TabKey[] = [
+  "Overview",
+  "KYC/KYB",
+  "Manuales & Políticas",
+  "Evidencias (Vault)",
+  "Integraciones",
+  "Usuarios & Roles",
+  "Audit Log",
+  "Settings",
+];
+
+const DEMO_LINKS = [
+  {
+    id: "aiprise",
+    label: "AiPrise – KYB/KYC Cases",
+    url: "https://dashboard.aiprise.com", // reemplazar con SSO/deep link
+    description: "Verificaciones de identidad, empresas y flujo de casos.",
+    tag: "KYC/KYB",
+  },
+  {
+    id: "policies",
+    label: "Repositorio – Políticas & Manuales",
+    url: "https://drive.google.com/drive/", // Drive/Notion/SharePoint
+    description:
+      "AML/CFT, PEPs, KYB, Manual de Cumplimiento, ISO 37301, 27001, 22301, etc.",
+    tag: "Docs",
+  },
+  {
+    id: "kibana",
+    label: "KYT / Monitoreo de Wallets",
+    url: "https://elliptic.co/", // Elliptic/Chainalysis/Scorechain
+    description: "Monitoreo transaccional, señales y reportes.",
+    tag: "KYT",
+  },
+  {
+    id: "tickets",
+    label: "Helpdesk – Evidencias & Requerimientos",
+    url: "https://helpdesk.alfred.com.do/",
+    description: "Flujo de evidencias, requerimientos regulatorios y auditorías.",
+    tag: "Ops",
+  },
+];
+
+const KPI = [
+  { label: "Casos KYC activos", value: 18 },
+  { label: "KYB en revisión", value: 7 },
+  { label: "Alertas KYT", value: 5 },
+  { label: "Requerimientos regulatorios", value: 3 },
+];
+
+// Lista JSON de Manuales & Políticas (editable y extensible)
+const MANUALS: Array<{
+  id: string;
+  title: string;
+  version: string;
+  owner: string;
+  updated: string; // ISO o texto
+  link: string; // URL al PDF/Notion/Drive
+  tags: string[];
+}> = [
+  {
+    id: "aml-policy-2025-08",
+    title: "AML/CFT Policy",
+    version: "v2025.8",
+    owner: "Compliance Admin",
+    updated: "2025-08-28",
+    link: "https://drive.google.com/",
+    tags: ["AML", "Core"],
+  },
+  {
+    id: "peps-policy-2025-08",
+    title: "PEPs Policy (Global/ES/US/SV)",
+    version: "v2025.8",
+    owner: "Oficial de Cumplimiento",
+    updated: "2025-08-19",
+    link: "https://drive.google.com/",
+    tags: ["PEPs", "Screening"],
+  },
+  {
+    id: "kyb-manual-2025-07",
+    title: "KYB Manual (ISO 37301 aligned)",
+    version: "v2.0",
+    owner: "Compliance Ops",
+    updated: "2025-07-22",
+    link: "https://drive.google.com/",
+    tags: ["KYB", "Procedures"],
+  },
+  {
+    id: "kyd-otc-ddo-2025-08",
+    title: "Debida Diligencia Operativa – OTC & FX",
+    version: "v2025.8",
+    owner: "Risk & Compliance",
+    updated: "2025-08-20",
+    link: "https://drive.google.com/",
+    tags: ["OTC", "FX", "DDO"],
+  },
+];
+
+// ----- Utilities -----
+const cx = (...classes: Array<string | false | null | undefined>) =>
+  classes.filter(Boolean).join(" ");
+
+function useSession() {
+  const [authed, setAuthed] = useState<boolean>(() => Boolean(localStorage.getItem("ap_session")));
+  const [role, setRole] = useState<Role>(() => (
+    (localStorage.getItem("ap_role") as Role) || "Compliance Officer"
+  ));
+
+  const login = (email: string, roleOverride?: Role) => {
+    localStorage.setItem("ap_session", email || DEMO_USER.email);
+    if (roleOverride) localStorage.setItem("ap_role", roleOverride);
+    setAuthed(true);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("ap_session");
+    setAuthed(false);
+  };
+
+  useEffect(() => {
+    localStorage.setItem("ap_role", role);
+  }, [role]);
+
+  return { authed, login, logout, role, setRole } as const;
+}
+
+// ----- Login Screen -----
+function Login({ onLogin }: { onLogin: (email: string, role?: Role) => void }) {
+  const [email, setEmail] = useState(DEMO_USER.email);
+  const [password, setPassword] = useState("");
+  const [isSSO, setIsSSO] = useState(false);
+
+  const handleSSO = () => {
+    setIsSSO(true);
+    // SSO simulado: redir ficticia y retorno exitoso
+    setTimeout(() => {
+      onLogin(email, "Compliance Officer");
+    }, 600);
+  };
+
+  return (
+    <div className="min-h-screen grid md:grid-cols-2" style={{ background: "#0f1020" }}>
+      <div className="hidden md:flex items-center justify-center p-10 relative">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="max-w-md">
+          <div className="text-3xl font-bold text-white leading-tight">
+            Beyond Banking — <span className="text-white/80">Seamless. Scalable. Compliant.</span>
+          </div>
+          <p className="mt-4 text-white/70">
+            Accede al Portal de Cumplimiento para gestionar KYC/KYB, políticas, evidencias, auditorías y monitoreo.
+          </p>
+          <div className="mt-8 grid grid-cols-2 gap-4">
+            {KPI.map((k) => (
+              <div key={k.label} className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                <div className="text-white/60 text-sm">{k.label}</div>
+                <div className="text-white text-3xl font-semibold mt-1">{k.value}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.08),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(255,106,0,.20),transparent_40%)]" />
+      </div>
+
+      <div className="flex items-center justify-center p-8 md:p-12 bg-white">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
+          <div className="mb-6">
+            <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: BRAND.primary }}>
+              <span className="text-white font-bold">AP</span>
+            </div>
+            <h1 className="mt-4 text-2xl font-semibold text-gray-900">{BRAND.name} Compliance</h1>
+            <p className="text-gray-500">Inicia sesión para continuar</p>
+          </div>
+
+          <form
+            onSubmit={(e) => { e.preventDefault(); onLogin(email); }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <input
+                className="mt-1 w-full rounded-xl border-gray-300 focus:border-indigo-600 focus:ring-indigo-600"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@alfredpay.io"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <input
+                className="mt-1 w-full rounded-xl border-gray-300 focus:border-indigo-600 focus:ring-indigo-600"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <button type="submit" className="w-full rounded-xl py-2.5 font-semibold text-white shadow-md" style={{ background: BRAND.primary }}>
+              Entrar
+            </button>
+            <div className="relative py-2 text-center text-xs text-gray-500">
+              <span className="bg-white px-2 relative z-10">o</span>
+              <div className="absolute left-0 right-0 top-1/2 -z-0 h-px bg-gray-200" />
+            </div>
+            <button type="button" onClick={handleSSO} disabled={isSSO} className="w-full rounded-xl py-2.5 font-semibold border shadow-sm flex items-center justify-center gap-2">
+              {isSSO ? "Conectando SSO…" : "Entrar con SSO (demo)"}
+            </button>
+            <div className="text-xs text-gray-500 text-center">SSO real: Okta/Azure AD/Google (próximo)</div>
+          </form>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// ----- Dashboard Shell -----
+function Shell({ children, role, onRoleChange, onLogout, tab, setTab }: {
+  children: React.ReactNode;
+  role: Role;
+  onRoleChange: (r: Role) => void;
+  onLogout: () => void;
+  tab: TabKey;
+  setTab: (t: TabKey) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Topbar */}
+      <div className="sticky top-0 z-40 backdrop-blur bg-white/70 border-b">
+        <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setOpen(!open)} className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-xl border">☰</button>
+            <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: BRAND.primary }}>
+              <span className="text-white font-bold">AP</span>
+            </div>
+            <div className="font-semibold">{BRAND.name} • Compliance</div>
+          </div>
+          <div className="hidden md:flex items-center gap-3">
+            <input className="w-64 rounded-xl border-gray-300 focus:border-indigo-600 focus:ring-indigo-600" placeholder="Buscar casos, políticas, tickets…" />
+            <select value={role} onChange={(e) => onRoleChange(e.target.value as Role)} className="rounded-xl border-gray-300" title="Rol">
+              {ROLES.map((r) => (<option key={r} value={r}>{r}</option>))}
+            </select>
+            <button onClick={onLogout} className="rounded-xl border px-3 py-1.5">Salir</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="mx-auto max-w-7xl px-4 py-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Sidebar */}
+        <aside className={cx("md:col-span-3", open ? "block" : "hidden md:block")}>
+          <nav className="space-y-1">
+            {TABS.map((item) => (
+              <button
+                key={item}
+                onClick={() => setTab(item)}
+                className={cx(
+                  "w-full text-left rounded-xl px-3 py-2 border",
+                  tab === item ? "bg-indigo-50 border-indigo-200" : "bg-white border-transparent hover:border-gray-200"
+                )}
+              >
+                {item}
+              </button>
+            ))}
+          </nav>
+
+          <div className="mt-6 p-4 rounded-2xl border bg-white">
+            <div className="text-sm text-gray-600">Rol actual</div>
+            <div className="font-semibold">{role}</div>
+            <p className="mt-2 text-xs text-gray-500">Vista previa de permisos (demo). Configura RBAC real en el backend.</p>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main className="md:col-span-9 space-y-6">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+// ----- Cards & Blocks -----
+function QuickLinks({ data = DEMO_LINKS }: { data?: typeof DEMO_LINKS }) {
+  const [query, setQuery] = useState("");
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    return data.filter((d) => [d.label, d.description, d.tag].some((x) => x.toLowerCase().includes(q)));
+  }, [query, data]);
+
+  return (
+    <div className="rounded-2xl border bg-white p-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-lg font-semibold">Accesos rápidos</h3>
+          <p className="text-sm text-gray-500">AiPrise, manuales, KYT y mesa de ayuda</p>
+        </div>
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filtrar…" className="rounded-xl border-gray-300" />
+      </div>
+
+      <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map((l) => (
+          <a key={l.id} href={l.url} target="_blank" rel="noreferrer" className="group rounded-2xl border p-4 hover:shadow-sm transition bg-white">
+            <div className="text-xs inline-flex px-2 py-0.5 rounded-full border bg-gray-50">{l.tag}</div>
+            <div className="mt-2 font-semibold group-hover:underline">{l.label}</div>
+            <div className="text-sm text-gray-600">{l.description}</div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KPICards() {
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {KPI.map((k) => (
+        <div key={k.label} className="rounded-2xl border bg-white p-4">
+          <div className="text-sm text-gray-500">{k.label}</div>
+          <div className="text-3xl font-semibold mt-1">{k.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RecentActivity() {
+  const items = [
+    { title: "Caso KYB – Tesser Payments", when: "hace 2 h", by: "Oficial de Cumplimiento" },
+    { title: "Alerta KYT – Wallet 0x0e3d5…", when: "hace 4 h", by: "KYT Bot" },
+    { title: "Actualización Manual PEPs (v2025.8)", when: "ayer", by: "Compliance Admin" },
+  ];
+  return (
+    <div className="rounded-2xl border bg-white p-5">
+      <h3 className="text-lg font-semibold">Actividad reciente</h3>
+      <ul className="mt-3 space-y-3">
+        {items.map((it) => (
+          <li key={it.title} className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">{it.title}</div>
+              <div className="text-xs text-gray-500">{it.by}</div>
+            </div>
+            <div className="text-xs text-gray-500">{it.when}</div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function EvidenceVault() {
+  return (
+    <div className="rounded-2xl border bg-white p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Evidencias (Vault)</h3>
+        <button className="rounded-xl border px-3 py-1.5">Subir evidencia</button>
+      </div>
+      <p className="mt-1 text-sm text-gray-600">Guarda oficios, capturas, extractos, CSV, PDFs y respuestas regulatorias. (Demo: no persistente)</p>
+      <div className="mt-4 grid sm:grid-cols-2 gap-4">
+        {["SAR_2025-08-29.pdf", "KYT_alerts_0828.csv"].map((f) => (
+          <div key={f} className="rounded-xl border p-3 bg-gray-50">
+            <div className="font-medium">{f}</div>
+            <div className="text-xs text-gray-500">Subido por Auditor • 21 MB</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AuditLog() {
+  return (
+    <div className="rounded-2xl border bg-white p-5">
+      <h3 className="text-lg font-semibold">Audit Log</h3>
+      <p className="text-sm text-gray-600">Entradas de auditoría (demo)</p>
+      <div className="mt-3 divide-y border rounded-2xl bg-white">
+        {[
+          { who: "Admin", action: "Editó política AML v2025.8", when: "2025-08-28 17:03" },
+          { who: "Compliance", action: "Aprobó KYB – FUELGO NETWORK", when: "2025-08-28 12:16" },
+          { who: "Bot", action: "Cerró alerta KYT #5543", when: "2025-08-27 09:41" },
+        ].map((row, idx) => (
+          <div key={idx} className="flex items-center justify-between p-3">
+            <div className="text-sm"><span className="font-medium">{row.who}</span> · {row.action}</div>
+            <div className="text-xs text-gray-500">{row.when}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuickActions() {
+  const actions = [
+    { label: "Nuevo caso KYB", hint: "Crear solicitud de verificación" },
+    { label: "Generar Reporte KYC", hint: "PDF institucional" },
+    { label: "Abrir mesa de ayuda", hint: "Ticket de requerimiento" },
+    { label: "Descargar política AML", hint: "Última versión" },
+  ];
+  return (
+    <div className="rounded-2xl border bg-white p-5">
+      <h3 className="text-lg font-semibold">Acciones rápidas</h3>
+      <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {actions.map((a) => (
+          <button key={a.label} className="rounded-2xl border p-4 text-left hover:shadow-sm bg-white">
+            <div className="font-medium">{a.label}</div>
+            <div className="text-xs text-gray-500">{a.hint}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ----- Manuals & Policies Component -----
+function ManualsPolicies() {
+  const [q, setQ] = useState("");
+  const [tag, setTag] = useState<string>("All");
+
+  const tags = useMemo(() => {
+    const s = new Set<string>();
+    MANUALS.forEach((m) => m.tags.forEach((t) => s.add(t)));
+    return ["All", ...Array.from(s)];
+  }, []);
+
+  const filtered = useMemo(() => {
+    const query = q.toLowerCase();
+    return MANUALS.filter((m) => {
+      const matchesQ = [m.title, m.version, m.owner].some((x) => x.toLowerCase().includes(query));
+      const matchesTag = tag === "All" || m.tags.includes(tag);
+      return matchesQ && matchesTag;
+    });
+  }, [q, tag]);
+
+  return (
+    <div className="rounded-2xl border bg-white p-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-lg font-semibold">Manuales & Políticas</h3>
+          <p className="text-sm text-gray-500">Catálogo versionado con búsqueda y filtro por tags</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar…" className="rounded-xl border-gray-300" />
+          <select value={tag} onChange={(e) => setTag(e.target.value)} className="rounded-xl border-gray-300">
+            {tags.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-4 overflow-hidden rounded-2xl border">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="text-left p-3">Título</th>
+              <th className="text-left p-3">Versión</th>
+              <th className="text-left p-3">Owner</th>
+              <th className="text-left p-3">Actualizado</th>
+              <th className="text-left p-3">Tags</th>
+              <th className="text-left p-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((m) => (
+              <tr key={m.id} className="border-t">
+                <td className="p-3 font-medium">{m.title}</td>
+                <td className="p-3">{m.version}</td>
+                <td className="p-3">{m.owner}</td>
+                <td className="p-3">{m.updated}</td>
+                <td className="p-3">
+                  <div className="flex flex-wrap gap-1">
+                    {m.tags.map((t) => (
+                      <span key={t} className="text-xs inline-flex px-2 py-0.5 rounded-full border bg-gray-50">{t}</span>
+                    ))}
+                  </div>
+                </td>
+                <td className="p-3">
+                  <a href={m.link} target="_blank" rel="noreferrer" className="text-indigo-700 font-medium hover:underline">Abrir</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-3 text-xs text-gray-500">
+        * Sugerencia: conecta esta tabla a Drive/Notion vía API para mantener versiones, owners y permisos.
+      </div>
+    </div>
+  );
+}
+
+// ----- Main App -----
+export default function App() {
+  const { authed, login, logout, role, setRole } = useSession();
+  const [tab, setTab] = useState<TabKey>("Overview");
+
+  if (!authed) return <Login onLogin={login} />;
+
+  return (
+    <Shell role={role} onRoleChange={setRole} onLogout={logout} tab={tab} setTab={setTab}>
+      <AnimatePresence>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+          {tab === "Overview" && (
+            <div className="grid gap-6">
+              <KPICards />
+              <QuickActions />
+              <QuickLinks />
+              <div className="grid lg:grid-cols-2 gap-6">
+                <RecentActivity />
+                <EvidenceVault />
+              </div>
+              <AuditLog />
+            </div>
+          )}
+
+          {tab === "Manuales & Políticas" && <ManualsPolicies />}
+
+          {tab === "Audit Log" && <AuditLog />}
+
+          {tab === "Evidencias (Vault)" && <EvidenceVault />}
+
+          {/* Los demás tabs se pueden poblar conforme integremos APIs reales */}
+        </motion.div>
+      </AnimatePresence>
+    </Shell>
+  );
+}

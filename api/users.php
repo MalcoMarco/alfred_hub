@@ -70,8 +70,8 @@ try {
                     'byRole' => [
                         'admin' => 0,
                         'compliance_officer' => 0,
-                        'analyst' => 0,
-                        'viewer' => 0
+                        'ceo' => 0,
+                        'ops_vp' => 0
                     ]
                 ];
                 
@@ -200,7 +200,7 @@ try {
                 exit;
             }
             
-            if (!in_array($role, ['admin', 'compliance_officer', 'analyst', 'viewer'])) {
+            if (!in_array($role, ['admin', 'compliance_officer', 'ceo', 'ops_vp'])) {
                 http_response_code(400);
                 echo json_encode(['error' => 'Rol inválido']);
                 exit;
@@ -280,7 +280,7 @@ try {
             }
             
             if (isset($input['role'])) {
-                if (!in_array($input['role'], ['admin', 'compliance_officer', 'analyst', 'viewer'])) {
+                if (!in_array($input['role'], ['admin', 'compliance_officer', 'ceo', 'ops_vp'])) {
                     http_response_code(400);
                     echo json_encode(['error' => 'Rol inválido']);
                     exit;

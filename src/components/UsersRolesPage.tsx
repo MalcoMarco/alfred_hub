@@ -354,8 +354,8 @@ const UsersRolesPage: React.FC = () => {
               onChange={(e) => setFormData({...formData, role: e.target.value as User['role']})}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="viewer">Visualizador</option>
-              <option value="analyst">Analista</option>
+              <option value="ceo">CEO</option>
+                <option value="ops_vp">VPS/VP</option>
               <option value="compliance_officer">Oficial de Cumplimiento</option>
               <option value="admin">Administrador</option>
             </select>

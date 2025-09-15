@@ -8,12 +8,8 @@ $password = 'password'; // Cambia por tu contraseña de base de datos
 // Clave secreta para JWT (CAMBIAR EN PRODUCCIÓN)
 $jwt_secret = 'TU_CLAVE_SECRETA_SUPER_SEGURA_2024'; // ¡Cambiar por una clave única y segura!
 
-// Configuración CORS
-$allowed_origins = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://tu-dominio.com'
-];
+// Configuración CORS - Permitir cualquier origen
+$allowed_origins = '*'; // Permite cualquier dominio
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
@@ -28,10 +24,16 @@ try {
 function handleCors() {
     global $allowed_origins;
     
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    
-    if (in_array($origin, $allowed_origins)) {
-        header("Access-Control-Allow-Origin: $origin");
+    // Si $allowed_origins es '*', permitir cualquier origen
+    if ($allowed_origins === '*') {
+        header("Access-Control-Allow-Origin: *");
+    } else {
+        // Comportamiento original para dominios específicos
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        
+        if (is_array($allowed_origins) && in_array($origin, $allowed_origins)) {
+            header("Access-Control-Allow-Origin: $origin");
+        }
     }
     
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');

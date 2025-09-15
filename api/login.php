@@ -65,9 +65,9 @@ try {
 
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Error del servidor']);
+    echo json_encode(['error' => 'Error del servidor', 'details' => $e->getMessage()]);
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Error generando token']);
+    echo json_encode(['error' => 'Error generando token', 'details' => $e->getMessage()]);
 }
 ?>

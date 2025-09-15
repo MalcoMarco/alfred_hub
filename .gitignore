@@ -28,3 +28,18 @@ dist-ssr
 .env
 /api/vendor
 /api/.env
+
+# Variables de entorno locales (contienen datos sensibles)
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos de configuración con datos reales
+.env.staging
+.env.prod
+config.local.php
+
+# Archivos de backup
+*.backup
+*.bak

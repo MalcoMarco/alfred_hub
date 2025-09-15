@@ -1,9 +1,9 @@
 <?php
 // Configuración de la base de datos
 $host = 'localhost';
-$dbname = 'alfredpay_compliance'; // Cambia por el nombre de tu base de datos
-$username = 'root'; // Cambia por tu usuario de base de datos
-$password = ''; // Cambia por tu contraseña de base de datos
+$dbname = 'compliance_hub'; // Cambia por el nombre de tu base de datos
+$username = 'malco'; // Cambia por tu usuario de base de datos
+$password = 'password'; // Cambia por tu contraseña de base de datos
 
 // Clave secreta para JWT (CAMBIAR EN PRODUCCIÓN)
 $jwt_secret = 'TU_CLAVE_SECRETA_SUPER_SEGURA_2024'; // ¡Cambiar por una clave única y segura!
@@ -34,7 +34,7 @@ function handleCors() {
         header("Access-Control-Allow-Origin: $origin");
     }
     
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');
     header('Access-Control-Allow-Headers: Content-Type, Authorization');
     header('Access-Control-Allow-Credentials: true');
     

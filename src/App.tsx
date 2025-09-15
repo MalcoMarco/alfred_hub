@@ -8,6 +8,7 @@ import SettingsPage from "./components/SettingsPage";
 import EvidenceVault from "./components/EvidenceVault";
 import AipriseModal from "./components/AipriseModal";
 import LoginScreen from "./components/LoginScreen";
+import UsersRolesPage from "./components/UsersRolesPage";
 
 // ✅ Importes RELATIVOS (sin alias @)
 import { createAipriseSession, api } from "./services/aiprise";
@@ -289,7 +290,7 @@ const KYBPage: React.FC = () => {
           </div>
         }
       >
-        {err && <div className="mb-3 rounded-md bg-red-50 p-2 text-sm text-red-700">{err}</div>}
+        {/* {err && <div className="mb-3 rounded-md bg-red-50 p-2 text-sm text-red-700">{err}</div>} */}
 
         <div className="overflow-auto rounded-lg border">
           <table className="min-w-[800px] w-full text-sm">
@@ -390,41 +391,7 @@ const IntegrationsPage: React.FC = () => (
   </div>
 );
 
-const UsersRolesPage: React.FC = () => (
-  <div className="space-y-4">
-    <Card title="Usuarios & Roles">
-      <div className="mb-3 text-sm text-gray-600">Vista previa de permisos (RBAC demo).</div>
-      <div className="overflow-auto rounded-lg border">
-        <table className="min-w-[600px] w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left">Usuario</th>
-              <th className="px-3 py-2 text-left">Rol</th>
-              <th className="px-3 py-2 text-left">Estado</th>
-              <th className="px-3 py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              { u: "Marino Marrero", r: "Compliance Officer", s: "Activo" },
-              { u: "Diego Yánez", r: "CEO", s: "Activo" },
-              { u: "Pilar Ricart", r: "Ops/VP", s: "Invitado" },
-            ].map((row) => (
-              <tr key={row.u} className="border-t">
-                <td className="px-3 py-2">{row.u}</td>
-                <td className="px-3 py-2">{row.r}</td>
-                <td className="px-3 py-2">{row.s}</td>
-                <td className="px-3 py-2 text-right">
-                  <button className="text-blue-700 hover:underline">Gestionar</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  </div>
-);
+// UsersRolesPage se ha movido a components/UsersRolesPage.tsx
 
 const AuditLogPage: React.FC = () => (
   <div className="space-y-4">

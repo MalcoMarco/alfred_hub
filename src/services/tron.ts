@@ -68,7 +68,7 @@ export function useTronFeed(address: string, interval = 10000) {
       } catch (e) {
         // opcional: console.warn(e);
       } finally {
-        timerRef.current = window.setTimeout(tick, interval);
+        //timerRef.current = window.setTimeout(tick, interval);
       }
     };
 

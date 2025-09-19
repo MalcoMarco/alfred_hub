@@ -10,6 +10,7 @@ import AipriseModal from "./components/AipriseModal";
 import LoginScreen from "./components/LoginScreen";
 import UsersRolesPage from "./components/UsersRolesPage";
 import EtherscanPage from "./components/EtherscanPage";
+import WalletsPage from "./components/WalletsPage";
 
 // ✅ Importes RELATIVOS (sin alias @)
 import { createAipriseSession, api } from "./services/aiprise";
@@ -27,7 +28,8 @@ type ModuleKey =
   | "users"
   | "audit"
   | "settings"
-  | "etherscan";
+  | "etherscan"
+  | "wallets";
 
 type CaseItem = {
   id: string;
@@ -50,6 +52,7 @@ const modules: Record<ModuleKey, string> = {
   audit: "Audit Log",
   settings: "Settings",
   etherscan: "Etherscan",
+  wallets: "Wallets",
 };
 
 const cx = (...classes: (string | false | null | undefined)[]) =>
@@ -481,6 +484,7 @@ const Shell: React.FC<{ onLogout: () => void; userToken: string }> = ({ onLogout
           {active === "audit" && <AuditLogPage />}
           {active === "settings" && <SettingsPage />}
           {active === "etherscan" && <EtherscanPage />}
+          {active === "wallets" && <WalletsPage />}
         </main>
       </div>
     </div>

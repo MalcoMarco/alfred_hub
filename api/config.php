@@ -1,9 +1,9 @@
 <?php
 // Configuración de la base de datos
 $host = 'localhost';
-$dbname = 'compliance_hub'; // Cambia por el nombre de tu base de datos
-$username = 'malco'; // Cambia por tu usuario de base de datos
-$password = 'password'; // Cambia por tu contraseña de base de datos
+$dbname = 'compliance_hub'; // Cambia por el nombre de tu base de datos (alfredco_hub)
+$username = 'malco'; // Cambia por tu usuario de base de datos (alfredco_hub)
+$password = 'password'; // Cambia por tu contraseña de base de datos (J17ehT95fC2t^^@1)
 
 // Clave secreta para JWT (CAMBIAR EN PRODUCCIÓN)
 $jwt_secret = 'TU_CLAVE_SECRETA_SUPER_SEGURA_2024'; // ¡Cambiar por una clave única y segura!
@@ -57,5 +57,40 @@ function getBearerToken() {
     }
     
     return null;
+}
+
+// Incluir JWT library
+require_once __DIR__ . '/../vendor/autoload.php';
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
+// Función para validar JWT
+function validateJWT($token) {
+    global $jwt_secret;
+    
+    try {
+        $decoded = JWT::decode($token, new Key($jwt_secret, 'HS256'));
+        return $decoded;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+// Función para obtener datos del usuario desde el token
+function getUserFromToken($token) {
+    global $pdo;
+    
+    $decoded = validateJWT($token);
+    if (!$decoded) {
+        return false;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("SELECT id, email, role FROM users WHERE id = ? AND active = 1");
+        $stmt->execute([$decoded->sub]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return false;
+    }
 }
 ?>
